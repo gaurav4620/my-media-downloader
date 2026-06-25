@@ -56,12 +56,22 @@ def get_users_count():
     return count
 
 # --- AUTOMATIC PROFILE/BIO UPDATER TASK ---
+# --- AUTOMATIC PROFILE/BIO UPDATER TASK ---
+from pyrogram.raw import functions
+
 async def auto_update_profile():
     while True:
         try:
             count = get_users_count()
             new_bio = f"🔥 Total Active Users: {count} | Send me any link to download video instantly! 🚀"
-            await app.set_bot_info(description=new_bio)
+            
+            # Raw Telegram API call jo har version me kaam karta hai
+            await app.invoke(
+                functions.bots.SetBotInfo(
+                    description=new_bio,
+                    lang_code="en"
+                )
+            )
             print(f"✨ Bot Profile Description updated with {count} users!")
         except Exception as e:
             print(f"Error updating profile description: {e}")
