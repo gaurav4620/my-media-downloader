@@ -6,18 +6,18 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from yt_dlp import YoutubeDL
 
 # ---- CONFIGURATION ----
-API_ID = 20060680  # (Yahan apni asli website waali API_ID likhein)
-API_HASH = "fb7e080bc19d911c14f758b39605febc" # Apna API HASH dalein
-BOT_TOKEN = "8709264133:AAFbUFYU1dgOuLaynhitaRHZRP1Tt9UxiEE" # Apna Bot Token dalein
+API_ID = 20060680          # Aapki sahi API ID (Bina quotes ke integer)
+API_HASH = "fb7e080bc19d911c14f758b39605febc" # Apna API HASH
+BOT_TOKEN = "8709264133:AAFbUfYU1dgOuLaynhitaRHZRP1Tt9UxiEE" # Apna Bot Token
 
-BOT_USERNAME = "SheinFrsh_bot"        # Aapke bot ka sahi username (Bina '@' ke)
-CHANNEL_USERNAME = "offerfactorynew"    # Aapke channel ka username (Bina '@' ke)
-GROUP_USERNAME = "AllcontentNew"        # Aapke group ka username (Bina '@' ke)
+BOT_USERNAME = "SheinFrsh_bot"        
+CHANNEL_USERNAME = "offerfactorynew"    
+GROUP_USERNAME = "AllcontentNew"        
 # -----------------------
 
 app = Client("MediaDownloaderBot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-# Force join check karne ka function
+# Force join check karne ka safe function
 async def is_user_joined(client, user_id):
     if CHANNEL_USERNAME == "your_channel" or GROUP_USERNAME == "your_group":
         return True
@@ -31,25 +31,30 @@ async def is_user_joined(client, user_id):
         print(f"Error checking join: {e}")
         return True
 
-# Join buttons template
+# Safe links templates
 def get_join_markup():
+    # .lower() lagane se username ekdum clean small letters me sahi link banayega
+    c_link = f"https://t.me/{CHANNEL_USERNAME.strip()}"
+    g_link = f"https://t.me/{GROUP_USERNAME.strip()}"
     return InlineKeyboardMarkup([
         [
-            InlineKeyboardButton("📢 Join Channel", url=f"https://t.me/{CHANNEL_USERNAME}"),
-            InlineKeyboardButton("💬 Join Group", url=f"https://t.me/{GROUP_USERNAME}")
+            InlineKeyboardButton("📢 Join Channel", url=c_link),
+            InlineKeyboardButton("💬 Join Group", url=g_link)
         ],
         [InlineKeyboardButton("🔄 Try Again", callback_data="check_again")]
     ])
 
-# Main menu buttons
 def get_main_markup():
+    c_link = f"https://t.me/{CHANNEL_USERNAME.strip()}"
+    g_link = f"https://t.me/{GROUP_USERNAME.strip()}"
+    b_link = f"https://t.me/{BOT_USERNAME.strip()}?start=true"
     return InlineKeyboardMarkup([
         [
-            InlineKeyboardButton("👥 Support Group", url=f"https://t.me/{GROUP_USERNAME}"),
-            InlineKeyboardButton("📢 Channel", url=f"https://t.me/{CHANNEL_USERNAME}")
+            InlineKeyboardButton("📢 Channel", url=c_link),
+            InlineKeyboardButton("💬 Support", url=g_link)
         ],
         [
-            InlineKeyboardButton("🚀 Share Bot", url=f"https://t.me/share/url?url=https://t.me/{BOT_USERNAME}?start=true&text=Hey! Checkout this awesome Media Downloader Bot 🔥")
+            InlineKeyboardButton("🚀 Share Bot", url=f"https://t.me/share/url?url={b_link}&text=Best Downloader Bot!")
         ]
     ])
 
@@ -65,7 +70,7 @@ async def start_cmd(client, message):
         return
         
     await message.reply_text(
-        f"👋 **Hello {message.from_user.first_name}! Welcome to Media Downloader Bot.**\n\n"
+        f"👋 **Hello {message.from_user.first_name}! Welcome.**\n\n"
         "Mujhe kisi bhi **Instagram Reels, YouTube Shorts, ya Facebook Video** ka link bhejo, "
         "mai use direct download karke bhej dunga!\n\n"
         "💡 Use `/help` to know more.",
@@ -76,8 +81,8 @@ async def start_cmd(client, message):
 async def help_cmd(client, message):
     await message.reply_text(
         "📖 **Bot Kaise Use Karein?**\n\n"
-        "1. Kisi bhi App (Instagram/YouTube/Facebook) par jayein.\n"
-        "2. Video ka **Copy Link** karne ke baad yahan chat me paste kar dein.\n"
+        "1. Kisi bhi video ka link copy karein.\n"
+        "2. Use yahan chat me seedhe send kar dein.\n"
         "3. Bot use automatic download karke aapko bhej dega.",
         reply_markup=get_main_markup()
     )
@@ -87,7 +92,7 @@ async def check_again_callback(client, callback_query):
     user_id = callback_query.from_user.id
     if await is_user_joined(client, user_id):
         await callback_query.message.edit_text(
-            f"🎉 **Dhananyawad Join Karne Ke Liye!**\n\n"
+            "🎉 **Dhananyawad Join Karne Ke Liye!**\n\n"
             "Ab aap mujhe koi bhi link bhej sakte hain, mai use download kar dunga! 🔥",
             reply_markup=get_main_markup()
         )
@@ -137,9 +142,7 @@ async def download_video(client, message):
         if os.path.exists(video_filename):
             os.remove(video_filename)
 
-# --- BULLETPROOF ASYNC ENGINE FOR PYTHON 3.11+ ---
+# --- Standard Continuous Engine ---
 if __name__ == "__main__":
-    print("🤖 Downloader Bot is starting...")
-    
-    # Standard Pyrogram continuous loop initialization
+    print("🚀 Starting Bot Engine...")
     app.run()
