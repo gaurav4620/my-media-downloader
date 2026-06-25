@@ -138,15 +138,8 @@ async def download_video(client, message):
             os.remove(video_filename)
 
 # --- BULLETPROOF ASYNC ENGINE FOR PYTHON 3.11+ ---
-async def start_bot():
-    print("🤖 Downloader Bot is starting...")
-    await app.start()
-    print("🚀 Bot is fully upgraded and running live!")
-    await idle()
-    await app.stop()
-
 if __name__ == "__main__":
-    try:
-        asyncio.run(start_bot())
-    except KeyboardInterrupt:
-        pass
+    print("🤖 Downloader Bot is starting...")
+    
+    # Standard Pyrogram continuous loop initialization
+    app.run()
