@@ -117,5 +117,13 @@ async def download_video(client, message):
             os.remove(video_filename)
 
 if __name__ == "__main__":
-    print("🤖 Secure Downloader Bot Started...")
-    app.run()
+    print("🤖 Downloader Bot is fully upgraded and running...")
+    
+    # Naye Python versions ke liye event loop handle karna
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        
+    loop.run_until_complete(app.run())
