@@ -1,22 +1,20 @@
 import os
 import asyncio
 import sqlite3
-from pyrogram import Client, filters
+from pyrogram import Client, filters, idle
 from pyrogram.errors import UserNotParticipant, FloodWait
 from yt_dlp import YoutubeDL
 
-# ---- CONFIGURATION ----
-API_ID = 20060680          
-API_HASH = "fb7e080bc19d911c14f758b39605febc" 
-BOT_TOKEN = "8709264133:AAFbUfYU1dgOuLaynhitaRHZRP1Tt9UxiEE" 
+# ---- CONFIGURATION (Railway Variables Se Uthayega) ----
+API_ID = int(os.getenv("API_ID", "20060680"))
+API_HASH = os.getenv("API_HASH", "fb7e080bc19d911c14f758b39605febc")
+BOT_TOKEN = os.getenv("BOT_TOKEN")
 
-BOT_USERNAME = "SheinFrsh_bot"        
-CHANNEL_USERNAME = "offerfactorynew"    
-GROUP_USERNAME = "AllcontentNew"        
-
-# 👑 APNI TELEGRAM USER ID YAHAN DALEIN
-ADMIN_ID = 554649415  
-# -----------------------
+BOT_USERNAME = os.getenv("BOT_USERNAME", "SheinFrsh_bot")
+CHANNEL_USERNAME = os.getenv("CHANNEL_USERNAME", "offerfactorynew")
+GROUP_USERNAME = os.getenv("GROUP_USERNAME", "AllcontentNew")
+ADMIN_ID = int(os.getenv("ADMIN_ID", "554649415"))
+# -------------------------------------------------------
 
 app = Client("MediaDownloaderBot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
@@ -56,26 +54,17 @@ def get_users_count():
     count = cursor.fetchone()[0]
     conn.close()
     return count
-# ---------------------------------
 
-# --- 🚀 AUTOMATIC PROFILE/BIO UPDATER TASK ---
+# --- AUTOMATIC PROFILE/BIO UPDATER TASK ---
 async def auto_update_profile():
     while True:
         try:
-            # Database se current user count nikaalna
             count = get_users_count()
-            
-            # Bot ka naya profile Description text set karna
             new_bio = f"🔥 Total Active Users: {count} | Send me any link to download video instantly! 🚀"
-            
-            # Pyrogram method se bot ke "About/Bio" ko change karna
             await app.set_bot_info(description=new_bio)
             print(f"✨ Bot Profile Description updated with {count} users!")
-            
         except Exception as e:
             print(f"Error updating profile description: {e}")
-            
-        # Har 10 minute (600 seconds) me automatic update hoga
         await asyncio.sleep(600)
 
 # Force join check karne ka function
@@ -108,7 +97,6 @@ async def start_cmd(client, message):
     )
 
 # ---- ADMIN COMMANDS ----
-
 @app.on_message(filters.command("stats") & filters.user(ADMIN_ID) & filters.private)
 async def stats_cmd(client, message):
     count = get_users_count()
@@ -141,8 +129,6 @@ async def broadcast_cmd(client, message):
         f"✅ **Success:** {success} users\n"
         f"❌ **Failed:** {failed} users"
     )
-
-# ------------------------
 
 @app.on_message(filters.regex(r"https?://(www\.)?(instagram\.com|youtube\.com|youtu\.be|facebook\.com|fb\.watch)/.+") & filters.private)
 async def download_video(client, message):
@@ -189,15 +175,13 @@ async def download_video(client, message):
         if os.path.exists(video_filename):
             os.remove(video_filename)
 
-# --- Standard Continuous Engine with Background Task ---
+# --- Background Task Connection Engine ---
 async def main():
-    print("🚀 Starting Bot Engine...")
+    print("🚀 Initializing Database...")
     init_db()
+    print("🤖 Starting Bot Engine...")
     await app.start()
-    
-    # Background profile bio updater task ko chalu karna
     asyncio.create_task(auto_update_profile())
-    
     print("🚀 Bot is live and Auto-Bio Updater is active!")
     await idle()
     await app.stop()
