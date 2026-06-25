@@ -1,8 +1,9 @@
 import os
 import asyncio
 import sqlite3
-from pyrogram import Client, filters, idle
+from pyrogram import Client, filters
 from pyrogram.errors import UserNotParticipant, FloodWait
+from pyrogram.raw import functions
 from yt_dlp import YoutubeDL
 
 # ---- CONFIGURATION (Railway Variables Se Uthayega) ----
@@ -55,28 +56,6 @@ def get_users_count():
     conn.close()
     return count
 
-# --- AUTOMATIC PROFILE/BIO UPDATER TASK ---
-# --- AUTOMATIC PROFILE/BIO UPDATER TASK ---
-from pyrogram.raw import functions
-
-async def auto_update_profile():
-    while True:
-        try:
-            count = get_users_count()
-            new_bio = f"🔥 Total Active Users: {count} | Send me any link to download video instantly! 🚀"
-            
-            # Raw Telegram API call jo har version me kaam karta hai
-            await app.invoke(
-                functions.bots.SetBotInfo(
-                    description=new_bio,
-                    lang_code="en"
-                )
-            )
-            print(f"✨ Bot Profile Description updated with {count} users!")
-        except Exception as e:
-            print(f"Error updating profile description: {e}")
-        await asyncio.sleep(600)
-
 # Force join check karne ka function
 async def is_user_joined(client, user_id):
     try:
@@ -94,6 +73,14 @@ async def start_cmd(client, message):
     user_id = message.from_user.id
     add_user(user_id)
     
+    # Jab bhi koi start kare, tabhi hatho-hath Bio update ho jaye (No background task loop crash)
+    try:
+        count = get_users_count()
+        new_bio = f"🔥 Total Active Users: {count} | Send me any link to download video instantly! 🚀"
+        await client.invoke(functions.bots.SetBotInfo(description=new_bio, lang_code="en"))
+    except Exception as e:
+        print(f"Bio update error: {e}")
+
     if not await is_user_joined(client, user_id):
         await message.reply_text(
             "⚠️ **Aapne Hamara Channel Ya Group Join Nahi Kiya!**\n\n"
@@ -185,16 +172,8 @@ async def download_video(client, message):
         if os.path.exists(video_filename):
             os.remove(video_filename)
 
-# --- Background Task Connection Engine ---
-async def main():
+if __name__ == "__main__":
     print("🚀 Initializing Database...")
     init_db()
-    print("🤖 Starting Bot Engine...")
-    await app.start()
-    asyncio.create_task(auto_update_profile())
-    print("🚀 Bot is live and Auto-Bio Updater is active!")
-    await idle()
-    await app.stop()
-
-if __name__ == "__main__":
-    asyncio.run(main())
+    print("🤖 Starting Native Pyrogram Engine...")
+    app.run()
