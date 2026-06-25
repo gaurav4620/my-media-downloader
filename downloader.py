@@ -6,7 +6,7 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from yt_dlp import YoutubeDL
 
 # ---- CONFIGURATION ----
-API_ID = 20060680          # Apni API ID dalein (Integer me)
+API_ID = 20060680  # (Yahan apni asli website waali API_ID likhein)
 API_HASH = "fb7e080bc19d911c14f758b39605febc" # Apna API HASH dalein
 BOT_TOKEN = "8709264133:AAFbUFYU1dgOuLaynhitaRHZRP1Tt9UxiEE" # Apna Bot Token dalein
 
