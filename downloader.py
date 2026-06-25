@@ -7,7 +7,7 @@ from yt_dlp import YoutubeDL
 # ---- CONFIGURATION ----
 API_ID = 20060680          
 API_HASH = "fb7e080bc19d911c14f758b39605febc" 
-BOT_TOKEN = "8709264133:AAFbUfYU1dgOuLaynhitaRHZRP1Tt9UxiEE" 
+BOT_TOKEN = "8709264133:AAFGaU0me0IH5GDAbB45dPSChFE8-yVp6iA" 
 
 BOT_USERNAME = "SheinFrsh_bot"        
 CHANNEL_USERNAME = "offerfactorynew"    
