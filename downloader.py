@@ -1,22 +1,84 @@
 import os
 import asyncio
+import sqlite3
 from pyrogram import Client, filters
-from pyrogram.errors import UserNotParticipant
+from pyrogram.errors import UserNotParticipant, FloodWait
 from yt_dlp import YoutubeDL
 
 # ---- CONFIGURATION ----
 API_ID = 20060680          
 API_HASH = "fb7e080bc19d911c14f758b39605febc" 
-BOT_TOKEN = "8709264133:AAFGaU0me0IH5GDAbB45dPSChFE8-yVp6iA" 
+BOT_TOKEN = "8709264133:AAFbUfYU1dgOuLaynhitaRHZRP1Tt9UxiEE" 
 
 BOT_USERNAME = "SheinFrsh_bot"        
 CHANNEL_USERNAME = "offerfactorynew"    
 GROUP_USERNAME = "AllcontentNew"        
+
+# 👑 APNI TELEGRAM USER ID YAHAN DALEIN
+ADMIN_ID = 554649415  
 # -----------------------
 
 app = Client("MediaDownloaderBot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-# Force join check karne ka simple function
+# ---- DATABASE SETUP (SQLite) ----
+DB_NAME = "users.db"
+
+def init_db():
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute('''CREATE TABLE IF NOT EXISTS users (user_id INTEGER PRIMARY KEY)''')
+    conn.commit()
+    conn.close()
+
+def add_user(user_id):
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    try:
+        cursor.execute("INSERT INTO users (user_id) VALUES (?)", (user_id,))
+        conn.commit()
+    except sqlite3.IntegrityError:
+        pass 
+    finally:
+        conn.close()
+
+def get_all_users():
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("SELECT user_id FROM users")
+    users = [row[0] for row in cursor.fetchall()]
+    conn.close()
+    return users
+
+def get_users_count():
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM users")
+    count = cursor.fetchone()[0]
+    conn.close()
+    return count
+# ---------------------------------
+
+# --- 🚀 AUTOMATIC PROFILE/BIO UPDATER TASK ---
+async def auto_update_profile():
+    while True:
+        try:
+            # Database se current user count nikaalna
+            count = get_users_count()
+            
+            # Bot ka naya profile Description text set karna
+            new_bio = f"🔥 Total Active Users: {count} | Send me any link to download video instantly! 🚀"
+            
+            # Pyrogram method se bot ke "About/Bio" ko change karna
+            await app.set_bot_info(description=new_bio)
+            print(f"✨ Bot Profile Description updated with {count} users!")
+            
+        except Exception as e:
+            print(f"Error updating profile description: {e}")
+            
+        # Har 10 minute (600 seconds) me automatic update hoga
+        await asyncio.sleep(600)
+
+# Force join check karne ka function
 async def is_user_joined(client, user_id):
     try:
         await client.get_chat_member(CHANNEL_USERNAME, user_id)
@@ -31,9 +93,11 @@ async def is_user_joined(client, user_id):
 @app.on_message(filters.command("start") & filters.private)
 async def start_cmd(client, message):
     user_id = message.from_user.id
+    add_user(user_id)
+    
     if not await is_user_joined(client, user_id):
         await message.reply_text(
-            "⚠️ **Aapne Hamara Channel Ya Group Join Nahi Kiya Chat!**\n\n"
+            "⚠️ **Aapne Hamara Channel Ya Group Join Nahi Kiya!**\n\n"
             f"Bot use karne ke liye pehle hamara Channel (@{CHANNEL_USERNAME}) aur Group (@{GROUP_USERNAME}) join karein, fir dobara `/start` likhein."
         )
         return
@@ -43,9 +107,48 @@ async def start_cmd(client, message):
         "Mujhe kisi bhi **Instagram Reels, YouTube Shorts, ya Facebook Video** ka link bhejo, mai use direct download karke bhej dunga!"
     )
 
+# ---- ADMIN COMMANDS ----
+
+@app.on_message(filters.command("stats") & filters.user(ADMIN_ID) & filters.private)
+async def stats_cmd(client, message):
+    count = get_users_count()
+    await message.reply_text(f"📊 **Bot Statistics:**\n\n👤 **Total Users:** {count}")
+
+@app.on_message(filters.command("broadcast") & filters.user(ADMIN_ID) & filters.private)
+async def broadcast_cmd(client, message):
+    if not message.reply_to_message:
+        return await message.reply_text("❌ **Galti:** Kisi message ka reply karke `/broadcast` likho!")
+    
+    exmsg = await message.reply_text("📢 **Broadcast shuru ho raha hai... Please wait...**")
+    all_users = get_all_users()
+    
+    success = 0
+    failed = 0
+    
+    for u_id in all_users:
+        try:
+            await message.reply_to_message.copy(chat_id=u_id)
+            success += 1
+        except FloodWait as e:
+            await asyncio.sleep(e.value)
+            await message.reply_to_message.copy(chat_id=u_id)
+            success += 1
+        except Exception:
+            failed += 1
+            
+    await exmsg.edit(
+        f"📢 **Broadcast Completed!**\n\n"
+        f"✅ **Success:** {success} users\n"
+        f"❌ **Failed:** {failed} users"
+    )
+
+# ------------------------
+
 @app.on_message(filters.regex(r"https?://(www\.)?(instagram\.com|youtube\.com|youtu\.be|facebook\.com|fb\.watch)/.+") & filters.private)
 async def download_video(client, message):
     user_id = message.from_user.id
+    add_user(user_id)
+    
     if not await is_user_joined(client, user_id):
         await message.reply_text(
             f"⚠️ **Pehle Join Karein!**\n\nChannel: @{CHANNEL_USERNAME}\nGroup: @{GROUP_USERNAME}"
@@ -86,6 +189,18 @@ async def download_video(client, message):
         if os.path.exists(video_filename):
             os.remove(video_filename)
 
+# --- Standard Continuous Engine with Background Task ---
+async def main():
+    print("🚀 Starting Bot Engine...")
+    init_db()
+    await app.start()
+    
+    # Background profile bio updater task ko chalu karna
+    asyncio.create_task(auto_update_profile())
+    
+    print("🚀 Bot is live and Auto-Bio Updater is active!")
+    await idle()
+    await app.stop()
+
 if __name__ == "__main__":
-    print("🚀 Starting Bot Engine without buttons...")
-    app.run()
+    asyncio.run(main())
